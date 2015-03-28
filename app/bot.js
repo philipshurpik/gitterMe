@@ -1,4 +1,5 @@
 var Gitter = require('node-gitter');
+var math = require('mathjs');
 var cli = require('./cli-config');
 var config = require('./config');
 
@@ -24,10 +25,18 @@ Bot.prototype.joinRoom = function(roomName) {
     this.gitter.rooms.join(roomName)
         .then(function(room) {
             console.log('Joined room: ', room.name);
-        })
+            this.listenToMessages(room);
+        }.bind(this))
         .fail(function(err) {
             console.log('Error. Not possible to join the room: ' + roomName + "\n", err);
         });
+};
+
+Bot.prototype.listenToMessages = function(room) {
+    var events = room.listen();
+    events.on('message', function(message) {
+        console.log('New message:', message.text);
+    });
 };
 
 module.exports = new Bot();
