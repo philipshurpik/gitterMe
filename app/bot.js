@@ -10,13 +10,15 @@ function Bot() {
 }
 
 Bot.prototype.init = function(token, room) {
+    this.activeUser = undefined;
     this.gitter = new Gitter(token);
     this.gitter.currentUser()
         .then(function(user) {
             console.log('You are logged in as:', user.username);
-        })
+            this.activeUser = user.username;
+        }.bind(this))
         .fail(function(err) {
-            console.log('Error. Unable to login. \nPossibly invalid token: ' + token + "\n", err);
+            console.log('Error: Unable to login. \nPossibly invalid token: ' + token + "\n", err);
         })
         .then(this.joinRoom.bind(this, room));
 };
@@ -26,47 +28,49 @@ Bot.prototype.joinRoom = function(roomName) {
         .then(function(room) {
             console.log('Joined room: ', room.name);
             var events = room.listen();
-            events.on('message', this.onNewMessage.bind(this));
+            events.on('message', this.onNewMessage.bind(this, room));
         }.bind(this))
         .fail(function(err) {
-            console.log('Error. Not possible to join the room: ' + roomName + "\n", err);
+            console.log('Error: Not possible to join the room: ' + roomName + "\n", err);
         });
 };
 
-Bot.prototype.onNewMessage = function(message) {
-    var expression = message.text;
-    var errorString = utils.checkExpression(expression);
-    if (errorString.length > 0) {
-        console.log(errorString);
+Bot.prototype.onNewMessage = function(room, message) {
+    if (message.fromUser.username === this.activeUser) {
         return;
     }
-    expression = utils.trim(expression);
     try {
+        var expression = message.text;
+        expression = Bot.utils.checkExpression(expression);
         var result = math.eval(expression);
-        console.log("calc " + expression + " = " + result);
+        Bot.utils.send(room, expression + "=" + result);
     }
     catch (exc) {
-        console.log(exc);
+        Bot.utils.send(room, message.text + ". Expression Error: " + exc.message);
     }
 };
 
-var utils = {
+Bot.utils = {
+    send: function(room, message) {
+        room.send(message);
+        console.log((new Date()).toLocaleString() + ": " + message);
+    },
     trim: function(expression) {
         return expression.substr(expression.indexOf('calc') + 4).trim();
     },
     checkExpression: function(expression) {
-        var regexp = new RegExp(/^[0-9+*().\-\/]+$/);
+        var regexp = new RegExp(/^[0-9+*().\-\/ ]+$/);
         if (expression.indexOf('calc') === -1) {
-            return "Error! No 'calc' keyword in message!";
+            throw new Error("No 'calc' keyword in message!");
         }
-        expression = utils.trim(expression);
+        expression = Bot.utils.trim(expression);
         if (expression.length === 0) {
-            return 'Error! Nothing to evaluate';
+            throw new Error("Nothing to evaluate");
         }
         if (!regexp.test(expression)) {
-            return 'Error! Invalid characters in expression';
+            throw new Error("Invalid characters in expression");
         }
-        return "";
+        return expression;
     }
 };
 
