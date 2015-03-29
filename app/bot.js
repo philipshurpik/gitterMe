@@ -1,9 +1,8 @@
 var Gitter = require('node-gitter');
 var math = require('mathjs');
-var cli = require('./cli-config');
 var config = require('./config');
 
-function Bot() {
+function Bot(cli) {
     var token = cli.token || config.authToken;
     var room = cli.room || config.defaultRoom;
     this.init(token, room);
@@ -74,4 +73,4 @@ Bot.utils = {
     }
 };
 
-module.exports = new Bot();
+module.exports = Bot;
