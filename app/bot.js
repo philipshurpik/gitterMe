@@ -8,12 +8,10 @@ function Bot(opts) {
 }
 
 Bot.prototype.init = function(token, room) {
-    this.activeUser = undefined;
     this.gitter = new Gitter(token);
     this.gitter.currentUser()
         .then(function(user) {
             console.log('You are logged in as:', user.username);
-            this.activeUser = user.username;
         }.bind(this))
         .fail(function(err) {
             console.log('Error: Unable to login. \nPossibly invalid token: ' + token + "\n", err);
@@ -34,7 +32,7 @@ Bot.prototype.joinRoom = function(roomName) {
 };
 
 Bot.prototype.onNewMessage = function(room, message) {
-    if (message.fromUser.username === this.activeUser) {
+    if (Bot.utils.isMessageFromBot(message.text)) {
         return;
     }
     try {
@@ -52,6 +50,9 @@ Bot.utils = {
     send: function(room, message) {
         room.send(message);
         console.log((new Date()).toLocaleString() + ": " + message);
+    },
+    isMessageFromBot: function(text) {
+        return (text.indexOf('Expression Error') !== -1 || (text.indexOf('calc') === -1 && text.indexOf('=') !== -1));
     },
     trim: function(expression) {
         return expression.substr(expression.indexOf('calc') + 4).trim();
