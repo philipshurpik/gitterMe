@@ -19,7 +19,7 @@ node index
 
 Run with other token and room:
 ```sh
-node index —token <token> —room <room>
+node index --token <token> --room <room>
 ```
 
 ### About
