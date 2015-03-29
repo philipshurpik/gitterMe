@@ -1,10 +1,9 @@
 var Gitter = require('node-gitter');
 var math = require('mathjs');
-var config = require('./config');
 
 function Bot(opts) {
-    var token = opts.token || config.authToken;
-    var room = opts.room || config.defaultRoom;
+    var token = opts.token;
+    var room = opts.room;
     this.init(token, room);
 }
 
